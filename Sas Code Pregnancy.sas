@@ -1,4 +1,4 @@
-*Work on Pregnancy and Opioid Utilization. **;
+**paper for Dr. Martins class. **;
 
 libname clms 'R:\PharMetrics LifeLink+ (2015)\claims - medical - inpatient';
 libname paper 'R:\GraduateStudents\SchuldtRobertF\paper';
@@ -470,7 +470,7 @@ data opioidmark;
 	set identify;
 	where opioid >0;
 	scripttime = 0;
-	if script_dt >= pre6 and < edc_index_date and opioid > 0 then scriptime = 1;
+	if script_dt >= pre6 and script_dt < edc_index_date and opioid > 0 then scriptime = 1;
 	if (script_dt >= edc_index_date and script_dt <= deliver_date ) and opioid > 0 then scriptime = 2;
 	
 
@@ -1507,11 +1507,20 @@ data full_dose_info;
 /* Getting rid of absurdly high dosages*/
 
 data project.cleaned_dosages;
-	set full_dose_info;;
-	where mme_eq_dose le 360;
-	
+	set full_dose_info;
 
 		run;
+title 'Pregnancy Trends Output Tables';
+
+
+ods escapechar = '^';
+goptions reset=all hsize=7in vsize=2in;
+ods pdf file='R:\GraduateStudents\Student Project #2\Output\output_tables.pdf' 
+startpage=yes; 
+
+ods pdf text = "^{newline 4}"; 
+ods pdf text = "^{style [just=center]}Peer Groups";
+
 title 'Opioid Prescribing Habits During Trimesters of Pregnancy';
 proc means data = project.cleaned_dosages;
 var first_t_mme second_t_mme third_t_mme;
@@ -1631,17 +1640,23 @@ value age_c
 run;
     proc logistic data=regression;
 		class age_cat(ref = "30 to 34") product (ref = 'PPO Commercial') deliveryear (ref = '2008') pat_region (ref = "E") / param= ref;
-        model user_preg (event="1")= age_cat  product  deliveryear  pat_region ;
+        model user_preg (event="1")= pre_user age_cat  product  deliveryear  pat_region ;
         ods output parameterestimates=logparms;
         output out=outlog p=p;
 		format pre_user usertypes. age_cat age_c. product prod. ;
         run;
+
+ods pdf close;
+
+
 
  proc qlim data=regression;
    class  age_cat product deliveryear pat_region ;
    model user_preg = age_cat  product  deliveryear  pat_region/ discrete (dist = logit);
    output out=outqlim marginal;
 run;
+
+
 /* I don't need right now
 data logparms2;
 	set logparms;
